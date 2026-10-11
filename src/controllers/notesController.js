@@ -12,7 +12,6 @@ export const getAllNotes = async (req, res, next) => {
     } = req.query;
 
     const { _id: userId } = req.user;
-
     const filter = { userId };
 
     if (tag) {
@@ -29,9 +28,7 @@ export const getAllNotes = async (req, res, next) => {
     const skip = (Number(page) - 1) * Number(perPage);
 
     const [notes, totalItems] = await Promise.all([
-      Note.find(filter)
-        .skip(skip)
-        .limit(Number(perPage)),
+      Note.find(filter).skip(skip).limit(Number(perPage)),
       Note.countDocuments(filter),
     ]);
 
@@ -106,7 +103,7 @@ export const updateNote = async (req, res, next) => {
       },
       req.body,
       {
-        new: true,
+        returnDocument: 'after',
         runValidators: true,
       },
     );

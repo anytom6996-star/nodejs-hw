@@ -1,9 +1,13 @@
-const pinoHttp = require('pino-http');
+
+import pinoHttp from 'pino-http';
 
 const logger = pinoHttp({
   transport: {
     target: 'pino-pretty',
+    options: {
+      colorize: true,
+    },
   },
 });
 
-module.exports = logger;
+export default logger;

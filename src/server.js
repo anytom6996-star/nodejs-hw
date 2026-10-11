@@ -1,13 +1,14 @@
-require('dotenv').config();
 
-const express = require('express');
-const cors = require('cors');
+import 'dotenv/config';
 
-const connectMongoDB = require('./db/connectMongoDB');
-const logger = require('./middleware/logger');
-const notFoundHandler = require('./middleware/notFoundHandler');
-const errorHandler = require('./middleware/errorHandler');
-const notesRoutes = require('./routes/notesRoutes');
+import express from 'express';
+import cors from 'cors';
+
+import connectMongoDB from './db/connectMongoDB.js';
+import logger from './middleware/logger.js';
+import notFoundHandler from './middleware/notFoundHandler.js';
+import errorHandler from './middleware/errorHandler.js';
+import notesRoutes from './routes/notesRoutes.js';
 
 const app = express();
 
@@ -23,8 +24,10 @@ app.use(errorHandler);
 const startServer = async () => {
   await connectMongoDB();
 
-  app.listen(process.env.PORT || 10000, () => {
-    console.log(`Server is running on port ${process.env.PORT || 10000}`);
+  const port = process.env.PORT || 10000;
+
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
   });
 };
 

@@ -1,24 +1,18 @@
-const js = require('@eslint/js');
-const globals = require('globals');
 
-module.exports = [
-  {
-    ignores: ['node_modules/**'],
-  },
+import globals from 'globals';
+import pluginJs from '@eslint/js';
 
-  js.configs.recommended,
-
+export default [
   {
     files: ['**/*.js'],
     languageOptions: {
+      globals: globals.node,
       ecmaVersion: 'latest',
-      sourceType: 'commonjs',
-      globals: {
-        ...globals.node,
-      },
-      },
+      sourceType: 'module',
+    },
     rules: {
-  'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-},
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    },
   },
+  pluginJs.configs.recommended,
 ];

@@ -10,4 +10,4 @@ const logger = pinoHttp({
   },
 });
 
-export default logger;
+export { logger };

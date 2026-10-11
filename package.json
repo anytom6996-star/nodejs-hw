@@ -4,14 +4,14 @@
   "description": "Node.js homework with Express and MongoDB",
   "type": "module",
   "main": "src/server.js",
-  
-"scripts": {
-  "start": "node src/server.js",
-  "dev": "nodemon src/server.js",
-  "lint": "eslint src",
-  "lint:fix": "eslint src --fix"
-},
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix"
+  },
   "dependencies": {
+    "celebrate": "^16.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",

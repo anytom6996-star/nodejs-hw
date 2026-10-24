@@ -9,7 +9,10 @@ import createHttpError from 'http-errors';
 
 import { User } from '../models/user.js';
 import { Session } from '../models/session.js';
-import { createSession, setSessionCookies } from '../services/auth.js';
+import {
+  createSession,
+  setSessionCookies,
+} from '../services/auth.js';
 import { sendEmail } from '../utils/sendMail.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -18,7 +21,7 @@ const __dirname = path.dirname(__filename);
 const PASSWORD_RESET_EMAIL_MESSAGE =
   'Password reset email sent successfully';
 
-// Реєстрація користувача
+// Register user
 export const registerUser = async (req, res, next) => {
   try {
     const { username, email, password } = req.body;
@@ -26,7 +29,7 @@ export const registerUser = async (req, res, next) => {
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
-      return next(createHttpError(409, 'Email in use'));
+      return next(createHttpError(400, 'Email in use'));
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -38,17 +41,16 @@ export const registerUser = async (req, res, next) => {
     });
 
     const session = await createSession(user._id);
+
     setSessionCookies(res, session);
 
-    return res.status(201).json({
-      user,
-    });
+    return res.status(201).json({ user });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
-// Вхід користувача
+// Login user
 export const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -56,7 +58,9 @@ export const loginUser = async (req, res, next) => {
     const user = await User.findOne({ email });
 
     if (!user) {
-      return next(createHttpError(401, 'Invalid email or password'));
+      return next(
+        createHttpError(401, 'Invalid email or password'),
+      );
     }
 
     const passwordIsValid = await bcrypt.compare(
@@ -65,23 +69,24 @@ export const loginUser = async (req, res, next) => {
     );
 
     if (!passwordIsValid) {
-      return next(createHttpError(401, 'Invalid email or password'));
+      return next(
+        createHttpError(401, 'Invalid email or password'),
+      );
     }
 
     await Session.deleteMany({ userId: user._id });
 
     const session = await createSession(user._id);
+
     setSessionCookies(res, session);
 
-    return res.status(200).json({
-      user,
-    });
+    return res.status(200).json({ user });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
-// Оновлення сесії
+// Refresh user session
 export const refreshUserSession = async (req, res, next) => {
   try {
     const { sessionId, refreshToken } = req.cookies;
@@ -112,17 +117,18 @@ export const refreshUserSession = async (req, res, next) => {
     await Session.deleteOne({ _id: session._id });
 
     const newSession = await createSession(session.userId);
+
     setSessionCookies(res, newSession);
 
     return res.status(200).json({
       message: 'Session refreshed successfully',
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
-// Вихід користувача
+// Logout user
 export const logoutUser = async (req, res, next) => {
   try {
     const { sessionId } = req.cookies;
@@ -137,18 +143,17 @@ export const logoutUser = async (req, res, next) => {
 
     return res.status(204).end();
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
-// Запит на лист для скидання пароля
+// Request password reset email
 export const requestResetEmail = async (req, res, next) => {
   try {
     const { email } = req.body;
 
     const user = await User.findOne({ email });
 
-    // Не розкриваємо, чи існує користувач із такою адресою.
     if (!user) {
       return res.status(200).json({
         message: PASSWORD_RESET_EMAIL_MESSAGE,
@@ -156,7 +161,9 @@ export const requestResetEmail = async (req, res, next) => {
     }
 
     if (!process.env.JWT_SECRET || !process.env.FRONTEND_DOMAIN) {
-      return next(createHttpError(500, 'Server configuration error'));
+      return next(
+        createHttpError(500, 'Server configuration error'),
+      );
     }
 
     const token = jwt.sign(
@@ -170,8 +177,13 @@ export const requestResetEmail = async (req, res, next) => {
       },
     );
 
+    const frontendDomain = process.env.FRONTEND_DOMAIN.replace(
+      /\/$/,
+      '',
+    );
+
     const resetPasswordUrl =
-      `${process.env.FRONTEND_DOMAIN.replace(/\/$/, '')}/reset-password?token=${encodeURIComponent(token)}`;
+      `${frontendDomain}/reset-password?token=${encodeURIComponent(token)}`;
 
     const templatePath = path.resolve(
       __dirname,
@@ -185,12 +197,11 @@ export const requestResetEmail = async (req, res, next) => {
     const html = template({
       username: user.username || user.email,
       resetPasswordUrl,
-      resetUrl: resetPasswordUrl,
-      link: resetPasswordUrl,
     });
 
     try {
       await sendEmail({
+        from: process.env.SMTP_FROM,
         to: user.email,
         subject: 'Password reset',
         html,
@@ -210,11 +221,11 @@ export const requestResetEmail = async (req, res, next) => {
       message: PASSWORD_RESET_EMAIL_MESSAGE,
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 
-// Скидання пароля
+// Reset password
 export const resetPassword = async (req, res, next) => {
   try {
     const { token, password } = req.body;
@@ -224,7 +235,9 @@ export const resetPassword = async (req, res, next) => {
     try {
       payload = jwt.verify(token, process.env.JWT_SECRET);
     } catch {
-      return next(createHttpError(401, 'Invalid or expired token'));
+      return next(
+        createHttpError(401, 'Invalid or expired token'),
+      );
     }
 
     if (
@@ -232,7 +245,9 @@ export const resetPassword = async (req, res, next) => {
       !payload.sub ||
       !payload.email
     ) {
-      return next(createHttpError(401, 'Invalid or expired token'));
+      return next(
+        createHttpError(401, 'Invalid or expired token'),
+      );
     }
 
     const user = await User.findOne({
@@ -248,7 +263,6 @@ export const resetPassword = async (req, res, next) => {
 
     await user.save();
 
-    // Старі сесії після зміни пароля більше не потрібні.
     await Session.deleteMany({ userId: user._id });
 
     res.clearCookie('sessionId');
@@ -259,7 +273,7 @@ export const resetPassword = async (req, res, next) => {
       message: 'Password reset successfully',
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
 

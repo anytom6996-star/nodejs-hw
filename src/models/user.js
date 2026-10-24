@@ -1,3 +1,4 @@
+
 import { model, Schema } from 'mongoose';
 
 const userSchema = new Schema(
@@ -17,8 +18,14 @@ const userSchema = new Schema(
       required: true,
       minlength: 8,
     },
+    avatar: {
+      type: String,
+      default: 'https://ac.goit.global/fullstack/react/default-avatar.jpg',
+    },
   },
-  { timestamps: true },
+  {
+    timestamps: true,
+  },
 );
 
 userSchema.methods.toJSON = function () {
